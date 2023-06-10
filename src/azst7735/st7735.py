@@ -25,7 +25,7 @@ import numpy as np
 import spidev
 import RPi.GPIO as GPIO
 
-__version__ = '0.1.2'
+__version__ = '0.1.3'
 
 SPI_CLOCK_HZ = 16000000
 
