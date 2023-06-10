@@ -333,6 +333,6 @@ class ST7735(object):
         # Unfortunate that this copy has to occur, but the SPI byte writing
         # function needs to take an array of bytes and PIL doesn't natively
         # store images in 16-bit 565 RGB format.
-        pixelbytes = list(image_to_data(image, self._rotation))
+        pixelbytes = list(image_to_data(image))
         # Write data to hardware.
         self.data(pixelbytes)
