@@ -329,6 +329,7 @@ class ST7735(object):
         :param image: Should be RGB format and the same dimensions as the display hardware.
 
         """
+        self.command(ST7735_RAMWR)       # write to RAM
         # Convert image to array of 16bit 565 RGB data bytes.
         # Unfortunate that this copy has to occur, but the SPI byte writing
         # function needs to take an array of bytes and PIL doesn't natively
