@@ -151,8 +151,8 @@ class ST7735(object):
             GPIO.setup(rst, GPIO.OUT)
 
         if self._cs is not None:
-            GPIO.setup(cs, GPIO.OUT)
-            GPIO.output(cs, 1)
+            GPIO.setup(self._cs, GPIO.OUT)
+            GPIO.output(self._cs, 1)
 
         self.reset()
         self._init()
