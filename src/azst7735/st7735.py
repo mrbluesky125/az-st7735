@@ -25,7 +25,7 @@ import numpy as np
 import spidev
 import RPi.GPIO as GPIO
 
-__version__ = '0.1.3'
+__version__ = '0.1.4'
 
 SPI_CLOCK_HZ = 16000000
 
@@ -92,20 +92,11 @@ ST7735_YELLOW = 0xFFE0  # 0b 11111 111111 00000
 ST7735_WHITE = 0xFFFF  # 0b 11111 111111 11111
 
 
-def image_to_data(image, rotation=0):
-    """Generator function to convert a PIL image to 16-bit 565 RGB bytes."""
-    # NumPy is much faster at doing this. NumPy code provided by:
-    # Keith (https://www.blogger.com/profile/02555547344016007163)
-    pb = np.rot90(np.array(image.convert('RGB')), rotation // 90).astype('uint16')
-    color = ((pb[:, :, 0] & 0xF8) << 8) | ((pb[:, :, 1] & 0xFC) << 3) | (pb[:, :, 2] >> 3)
-    return np.dstack(((color >> 8) & 0xFF, color & 0xFF)).flatten().tolist()
-
-
 class ST7735(object):
     """Representation of an ST7735 TFT LCD."""
 
     def __init__(self, port, cs, dc, rst=None, width=ST7735_TFTWIDTH,
-                 height=ST7735_TFTHEIGHT, invert=True, spi_speed_hz=4000000):
+                 height=ST7735_TFTHEIGHT, invert=True, spi_speed_hz=SPI_CLOCK_HZ):
         """Create an instance of the display using SPI communication.
 
         Must provide the GPIO pin number for the D/C pin and the SPI driver.
@@ -113,7 +104,7 @@ class ST7735(object):
         Can optionally provide the GPIO pin number for the reset pin as the rst parameter.
 
         :param port: SPI port number
-        :param cs: SPI chip-select number (0 or 1 for BCM
+        :param cs: SPI chip-select number (0 or 1 for BCM) or any usable GPIO
         :param backlight: Pin for controlling backlight
         :param rst: Reset pin for ST7735
         :param width: Width of display connected to ST7735
@@ -153,6 +144,7 @@ class ST7735(object):
         if self._cs is not None:
             GPIO.setup(self._cs, GPIO.OUT)
             GPIO.output(self._cs, 1)
+            self._spi.no_cs = True
 
         self.reset()
         self._init()
@@ -323,10 +315,18 @@ class ST7735(object):
         self.command(ST7735_DISPON)     # Display on
         time.sleep(0.100)               # 100 ms
 
+    def image_to_data(self, image):
+        """Generator function to convert a PIL image to hardware specific 16-bit 565 RGB bytes."""
+        # NumPy is much faster at doing this. NumPy code provided by:
+        # Keith (https://www.blogger.com/profile/02555547344016007163)
+        pb = np.array(image.resize((self._width,self._height)).convert('RGB')).astype('uint16')
+        color = ((pb[:, :, 2] & 0xF8) << 8) | ((pb[:, :, 1] & 0xFC) << 3) | (pb[:, :, 0] >> 3)
+        return np.dstack(((color >> 8) & 0xFF, color & 0xFF)).flatten().tolist()
+
     def display(self, image):
         """Write the provided image to the hardware.
 
-        :param image: Should be RGB format and the same dimensions as the display hardware.
+        :param image: Should be RGB format and the same aspect ratio as the display hardware.
 
         """
         self.command(ST7735_RAMWR)       # write to RAM
